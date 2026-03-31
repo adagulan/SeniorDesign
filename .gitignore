@@ -1,0 +1,19 @@
+# Build folders
+build/
+**/build/
+
+# Sysbuild generated images
+sysbuild/ipc_radio/
+sysbuild/mcuboot/
+sysbuild/b0n/
+
+# ALSO ignore actual sysbuild output location
+build/_sysbuild/
+
+# Zephyr artifacts
+*.elf
+*.hex
+*.bin
+*.map
+*.log
+.DS_Store

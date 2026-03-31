@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.20.0)
+
+macro(app_set_runner_args)
+  if(CONFIG_BOARD_HEALTHYPI_MOVE_NRF5340_CPUAPP)
+    # Use alternative QSPI configuration file 
+    board_runner_args(nrfjprog "--qspiini=${CMAKE_CURRENT_SOURCE_DIR}/qspi_w25.ini")
+  endif()
+endmacro()
+
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+project(healthypi_move)
+
+FILE(GLOB app_sources   src/*.c 
+                        src/images/*.c 
+                        src/ui/*.c 
+                        src/ui/components/*.c
+                        src/ui/images/*.c
+                        src/ui/fonts/*.c
+                        src/ui/fonts/lvgl/*.c
+                        src/ui/screens/*.c
+                        src/ui/screens/*.c
+                        src/ui/screens/*.c
+                        src/sm/*.c)  
+
+# Exclude TODAY screen source if disabled
+if(NOT CONFIG_HPI_TODAY_SCREEN)
+  list(FILTER app_sources EXCLUDE REGEX ".*/src/ui/screens/scr_today\\.c$")
+endif()
+
+# Exclude GSR sources if the screen is disabled
+if(NOT CONFIG_HPI_GSR_SCREEN)
+  list(FILTER app_sources EXCLUDE REGEX ".*/src/ui/screens/scr_gsr\\.c$")
+  list(FILTER app_sources EXCLUDE REGEX ".*/src/ui/screens/scr_gsr_plot\\.c$")
+endif()
+
+target_sources(app PRIVATE ${app_sources})
+
+# Explicitly include autoscale helper (ensure CMake picks it up if globbing was run earlier)
+target_sources(app PRIVATE src/ui/hpi_ppg_autoscale.c)
+
+# Explicitly include measurement settings (ensure CMake picks it up if globbing was run earlier)
+target_sources(app PRIVATE src/hpi_measurement_settings.c)
+
+if(CONFIG_MAX32664_UPDATER)
+    FILE(GLOB max32664_updater_sources 
+         src/max32664_updater/max32664_updater.c)
+    target_sources(app PRIVATE ${max32664_updater_sources})
+    zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/max32664_updater)
+endif()
+
+zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/drivers)
+zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
+
+# This places images in the external flash memory
+
+#zephyr_code_relocate(FILES lib/max32664_updater/max32664_updater.c LOCATION EXTFLASH_TEXT NOCOPY)
+#zephyr_code_relocate(FILES lib/max32664_updater/msbl/max32664c_30_13_31.c LOCATION EXTFLASH_RODATA NOCOPY)
+#zephyr_code_relocate(FILES lib/max32664_updater/msbl/max32664d_40_6_0.c LOCATION EXTFLASH_RODATA NOCOPY)
+
+#zephyr_code_relocate(LIBRARY subsys__mgmt__mcumgr__mgmt LOCATION EXTFLASH_TEXT NOCOPY)
+#zephyr_code_relocate(LIBRARY subsys__mgmt__mcumgr__transport LOCATION EXTFLASH_TEXT NOCOPY)
+#zephyr_code_relocate(LIBRARY subsys__mgmt__mcumgr__util LOCATION EXTFLASH_TEXT NOCOPY)
+#zephyr_code_relocate(LIBRARY subsys__mgmt__mcumgr__smp LOCATION EXTFLASH_TEXT NOCOPY)
+#zephyr_code_relocate(LIBRARY subsys__mgmt__mcumgr__grp__img_mgmt LOCATION EXTFLASH_TEXT NOCOPY)
+#zephyr_code_relocate(LIBRARY subsys__mgmt__mcumgr__grp__os_mgmt LOCATION EXTFLASH_TEXT NOCOPY)
+
+#zephyr_code_relocate(LIBRARY modules__cmsis-dsp LOCATION EXTFLASH_TEXT NOCOPY)
